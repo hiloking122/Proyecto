@@ -1,0 +1,10 @@
+pandas
+rapidfuzz
+apscheduler
+win10toast
+pytest
+requests
+PySide6
+matplotlib
+setuptools<81
+openpyxl
