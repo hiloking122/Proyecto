@@ -44,6 +44,13 @@ class ExchangeRates:
         """Devuelve la tasa base -> target.
         Usa open.er-api.com.
         """
+        # Caso especial: BCV (Oficial Venezuela)
+        if base == "USD" and target == "VES":
+            try:
+                return self.get_bcv_rate()
+            except Exception:
+                pass # Fallback to open.er-api
+
         # Normalizamos la key de cache para evitar duplicados (USD:VES)
         key = f"{base}:{target}"
         
@@ -94,6 +101,26 @@ class ExchangeRates:
         # El código legacy usaba 60.0 por defecto en la DB, así que aquí lanzamos para que la app use el de la DB
         raise ValueError(f"Could not fetch rate for {base} -> {target}")
 
+    def get_bcv_rate(self) -> float:
+        """Obtiene la tasa oficial del BCV desde dolarapi.com."""
+        url = "https://ve.dolarapi.com/v1/dolares/oficial"
+        try:
+            resp = requests.get(url, timeout=10)
+            resp.raise_for_status()
+            data = resp.json()
+            # DolarAPI devuelve 'promedio' o 'venta'
+            rate = data.get("promedio") or data.get("precio") or data.get("venta")
+            if rate:
+                # Actualizar cache para USD:VES
+                self.cache["USD:VES"] = {"ts": time.time(), "rate": float(rate)}
+                self._save_cache()
+                return float(rate)
+        except Exception as e:
+            logger.error(f"Error fetching BCV rate: {e}")
+        
+        raise ValueError("No se pudo obtener la tasa del BCV")
+
 if __name__ == "__main__":
     er = ExchangeRates()
-    print("USD -> VES:", er.get_rate("USD", "VES"))
+    print("BCV -> VES:", er.get_bcv_rate())
+    print("USD -> VES (Generic):", er.get_rate("USD", "VES"))

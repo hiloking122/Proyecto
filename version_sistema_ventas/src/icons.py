@@ -1,9 +1,13 @@
+import sys
 import os
 from PySide6.QtGui import QIcon
 
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-ICONS_DIR = os.path.join(BASE_DIR, 'assets', 'icons')
+if getattr(sys, 'frozen', False):
+    BASE_DIR = sys._MEIPASS  # type: ignore
+else:
+    BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
+ICONS_DIR = os.path.join(BASE_DIR, 'assets', 'icons')
 
 def load_icon(name: str) -> QIcon:
     """Carga un icono desde assets/icons/{name}.png o .svg si existe. Devuelve QIcon vacío si no hay archivo.
